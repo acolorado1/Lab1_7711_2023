@@ -26,10 +26,12 @@ git branch -a
 
 Next in the file **GithubPractice.R** add a comment such as: *"Sofia Colorado was here"*
 
-Now we create and push our changes to the remote version of the branch in Github. I as the owner of the branch will pull and merge them together. 
+Now we create and push our changes to the remote version of the branch in Github. I as the owner of the repo will pull and merge them together. 
 
 ```
-git push BranchName
+git add GithubPractice.R
+git commit -m "commit message here" 
+git push -u origin BranchName [e.g.,FirstLast_lab1]
 ```
 
 To update your local repository
