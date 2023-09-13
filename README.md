@@ -11,7 +11,6 @@ At this stage we're going to get a local copy of the Github repo and create our 
 + Go into local repo 
 + Make sure you are on the *main* branch
 + Make a branch named: FirstLast_lab1
-+ Push local branch to remote repo
 + Check that you are on the the new branch 
 
 ```
@@ -20,7 +19,6 @@ git clone https://github.com/acolorado1/Lab1_7711_2023.git
 cd Lab1_7711_2023
 git branch -a 
 git checkout -b FirstLast_lab1
-git push -u origin FirstLast_lab1
 git branch -a
 ```
 
@@ -46,3 +44,12 @@ git pull origin main
 
 ## Let's look at some R scripts 
 
+If you want to follow along, the script I will be going through is **Examples.R**
+
+If you want to render your markdown into html for easier visualization, just press *knit* at the top in Rstudio. 
+
+## Practice 
+
+Open **Practice.R**. Each group will be assigned two problems, and each person should code the solution for one. 
+
+Please collaborate with your partner. As you develop your figure ask their opinion and try to incorporate some changes they suggest. 
