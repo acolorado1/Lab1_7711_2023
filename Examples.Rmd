@@ -1,0 +1,154 @@
+# Example Senarios 
+
+The goal of this code will be to introduce some easy ways to make your data tidy, perform efficient statistics, and visualize the results. 
+
+
+### Things to Keep in Mind
+
++ Distributions (e.g., individual data points)
++ Minimize color 
++ Contrasting colors (Use prebuilt color palettes: Rcolorbrewer)
++ Minimize shape differences 
++ Text size (defaults are usually too small)
++ Show stats in the plot ideally
++ Keep in mind the medium (e.g., presentation, paper, poster)
++ Consistency 
++ Hot take: always code plots (for the most part)
+
+### To Begin 
+
+```{r, warning=FALSE, message=FALSE}
+# load in necessary packages 
+library(readr)
+library(rstatix)
+library(tidyverse)
+library(ggpubr)
+library(dplyr)
+library(ggplot2)
+library(cowplot)
+```
+
+```{r, warning=FALSE, message=FALSE}
+# read in data 
+PracticeData <- read_csv("Data/PracticeData.csv")
+```
+
+A few things of note about this data: 
+
++ There are three cohorts 
+  + A: ART naive 
+  + B: ART experienced
+  + C: Healthy controls 
+  
++ There are 2 visits
+  + 2: 0 weeks 
+  + 3: 24 weeks
+
++ There are 6 categories of BMI 
+  + Severe_thinness
+  + Moderate_thinnes
+  + Mild_thinness
+  + Normal
+  + Overweight
+  + Obese
+  
++ There are 6 immune markers 
+  + CD4+_count
+  + CD4_PD1_Percent
+  + CD4_CD103_Percent
+  + CD4_HLADRpos_CD38pos_Percent
+  + CRP_mg_L
+  + Cortisol_ug_dL
+  
+### Potential Analyses 
+
+What if we want to know significant differences in immune markers between cohorts stratifying by Visit? 
+
+```{r, warning=FALSE, message=FALSE}
+# make list of immune markers except CD4 count for now 
+immune_markers <- c("CD4_PD1_Percent", "CD4_CD103_Percent",
+                    "CD4_HLADRpos_CD38pos_Percent", "CRP_mg_L", "Cortisol_ug_dL")
+
+# make data tidy 
+tidy_data <- PracticeData %>% 
+  select(Cohort_Short, Visit, all_of(immune_markers)) %>% 
+  gather(-Cohort_Short, -Visit, 
+         key = immune_cell, value = quantity)
+
+# using rstatix we perform kruskall wallis tests with a Dunn's post hoc 
+dunns_data <- tidy_data %>% 
+  group_by(immune_cell, Visit) %>% 
+  dunn_test(quantity~Cohort_Short) %>% 
+  adjust_pvalue(method = 'bonferroni')
+
+# plotting all results stratifying by visit 
+dunns_data <- dunns_data %>% 
+  add_xy_position(x = "Cohort_Short")
+
+bxp <- ggplot(tidy_data, aes(x = Cohort_Short, y = quantity)) + 
+          geom_boxplot() + 
+          theme_bw() + 
+          facet_grid(Visit~immune_cell) + 
+          xlab("Cohort") + 
+          ylab("")
+
+bxp + 
+  stat_pvalue_manual(dunns_data, label = "p.adj.signif")
+```
+  
+For more statistical tests that rstatix can perform go to: https://rpkgs.datanovia.com/rstatix/
+  
+
+
+What if we want to combine multiple plots? 
+
+```{r, warning=FALSE, message=FALSE}
+# lets save previous boxplot 
+sub_dunns <- dunns_data %>% 
+  filter(immune_cell == "CD4_PD1_Percent" | immune_cell == "CD4_HLADRpos_CD38pos_Percent") %>% 
+  mutate(Visit = case_when(Visit == 2 ~ 'Week 0', 
+                           Visit == 3 ~ 'Week 24'))
+fig1 <- tidy_data %>% 
+  filter(immune_cell == "CD4_PD1_Percent" | immune_cell == "CD4_HLADRpos_CD38pos_Percent") %>% 
+  mutate(Visit = case_when(Visit == 2 ~ 'Week 0', 
+                           Visit == 3 ~ 'Week 24')) %>% 
+  ggplot(aes(x = Cohort_Short, y = quantity)) + 
+          geom_boxplot() + 
+          theme_bw() + 
+          facet_grid(Visit~immune_cell) + 
+          ylim(0, 110) + 
+          xlab("Cohort") + 
+          ylab("") + 
+          stat_pvalue_manual(sub_dunns, label = "p.adj.signif")
+
+# quant by quant plot: immune activation by immune exhaustion
+fig2 <- ggplot(PracticeData, aes(x = CD4_HLADRpos_CD38pos_Percent, y = CD4_PD1_Percent)) + 
+          geom_point() + 
+          geom_smooth(method = lm, ) + 
+          stat_cor(label.x = 20, label.y = 85) + 
+          theme_bw()
+
+# lets see number of males and females by water source  
+fig3 <- ggplot(PracticeData, aes(x = Main_Source_Water)) + 
+          geom_bar(aes(fill = Gender)) + 
+          theme_bw()
+
+
+
+
+# Merge all plots using cowplot function plot_grid()
+bottom_row <- plot_grid(fig2, fig3,
+                  labels = c("B", "C"), 
+                  ncol = 2, 
+                  nrow = 1, 
+                  hjust = -1, 
+                  vjust = 0)
+
+plot_grid(fig1, bottom_row, 
+          labels = c("A", " "), 
+          ncol = 1,
+          nrow = 2, 
+          rel_heights = c(1, 0.6),
+          scale = 0.9, 
+          hjust = -3)
+```
