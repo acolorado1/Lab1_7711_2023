@@ -1,0 +1,126 @@
+Please run this first chunk so we all have a consistent database name and set of packages to start with. 
+
+```{r, warning=FALSE, message=FALSE}
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(rstatix) 
+library(ggplot2)
+library(ggpubr)
+library(cowplot)
+
+PracticeData <- read_csv("Data/PracticeData.csv")
+```
+
+If you want to add more packages you are more than welcome to do so in your respective code chunks.
+
+## Group A 
+
+For these two exercises please keep the old bad version and put it in a side by side comparison with your new and improved version. Think about the data that you have, what would be informative to an audience, be as creative as you want. 
+
+### Excercise 1
+
+Take this figure and improve it for a presentation. 
+
+```{r, warning=FALSE, message=FALSE, out.width="100%"}
+OG <- ggplot(PracticeData, aes(x = Main_Source_Water, y = Visit_Age)) + 
+  geom_boxplot(aes(fill = BMI_Cat))
+
+# first I want to reorder BMI categories so they reflect BMI from thin to obese
+PracticeData$BMI_Cat <- ordered(PracticeData$BMI_Cat, levels = c("Severe_thinness", "Moderate_thinness", "Mild_thinness", "Normal", "Overweight", "Obese"))
+
+# fix the plot a bit, basic stuff 
+new_plot <- PracticeData %>% 
+              mutate(Main_Source_Water = case_when(Main_Source_Water == 'a. Tap' ~ 'Tap',
+                                                  Main_Source_Water == 'b. Bore hole' ~ 'Bore\nHole',
+                                                  Main_Source_Water == 'c. Well' ~ 'Well')) %>% 
+              ggplot(aes(x = Main_Source_Water, y = Visit_Age)) + 
+                          geom_boxplot() + 
+                          theme_bw() + 
+                          ylab("Age") + 
+                          xlab("Water Source") + 
+                          labs(fill = "BMI Categories") + 
+                          theme(text = element_text(size = 16)) + # change angle of x axis tick labels 
+                          facet_wrap(~BMI_Cat)
+
+# Extra idea 
+# create a summary table and turn it into a heat map 
+summary_table <- as.data.frame(table(PracticeData$Main_Source_Water, PracticeData$BMI_Cat))
+colnames(summary_table) <- c("WaterSource", "BMICat", "Count") 
+
+summary_heatmap <- summary_table %>% 
+                      mutate(WaterSource = case_when(WaterSource == 'a. Tap' ~ 'Tap',
+                                             WaterSource == 'b. Bore hole' ~ 'Bore\nHole',
+                                             WaterSource == 'c. Well' ~ 'Well')) %>% 
+                    ggplot(aes(x = WaterSource, y = BMICat, fill = Count)) + 
+                                      geom_tile(show.legend = F) + 
+                                      geom_text(aes(label = Count)) + 
+                                      theme_bw() + 
+                                      scale_fill_gradient(low = "white", high = "#1b98e0") + 
+                                      xlab("Water Source") + 
+                                      ylab("BMI Categories") + 
+                                      theme(text = element_text(size = 16))
+
+# This might be my solution 
+plot_grid(new_plot, summary_heatmap, 
+         ncol = 1, 
+         nrow = 2, 
+         rel_heights = c(1, 0.5))
+
+# This is comparing the old and new plots 
+plot_grid(OG, new_plot, 
+          ncol = 2, 
+          nrow = 1)
+```
+
+### Excercise 2
+
+Take this figure and improve it for a publication.  
+
+```{r, warning=FALSE, message=FALSE, out.width="100%"}
+OG <- ggplot(PracticeData, aes(x=CRP_mg_L, y = BMI)) + 
+        geom_point()
+
+new_plot <- ggplot(PracticeData, aes(x=CRP_mg_L, y = BMI, color = Main_Source_Water)) + 
+                geom_point() + 
+                geom_smooth(method = "lm", se = F) +
+                stat_cor() + 
+                theme_bw() + 
+                theme(text = element_text(size = 12)) + 
+                xlab("CRP (mg/L)") +
+                labs(color = "Water Source")
+  
+plot_grid(OG, new_plot, 
+          ncol = 2, 
+          nrow = 1, 
+          rel_widths = c(0.6,1))
+```
+
+## Group B 
+
+### Excercise 3
+
+```{r, warning=FALSE, message=FALSE}
+
+```
+
+### Excercise 4
+
+```{r, warning=FALSE, message=FALSE}
+
+```
+
+## Group C 
+
+### Excercise 5
+
+```{r, warning=FALSE, message=FALSE}
+
+```
+
+### Excercise 6
+
+```{r, warning=FALSE, message=FALSE}
+
+```
+
