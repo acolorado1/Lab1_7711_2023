@@ -1,6 +1,6 @@
 # Laboratory 1: 7711 Fall 2023 
 
-The purpose of this lab is to introduce you to practical tips and tricks when using ggplot and tidy data for creation of clean, informative, reproducible visualizations. 
+The purpose of this lab is to introduce you to practical considerations, tips and tricks when using ggplot and tidy data for creation of clean, informative, reproducible visualizations. 
 
 ## Getting Started with Github 
 
@@ -32,7 +32,7 @@ git commit -m "commit message here"
 git push -u origin BranchName [e.g.,FirstLast_lab1]
 ```
 
-To update your local repository
+After I have merged your changes, you will need to update your local repository.
 
 + go to main branch on your computer
 + pull from remote repository
@@ -49,6 +49,8 @@ If you want to follow along, the script I will be going through is **Examples.R*
 If you want to render your markdown into html for easier visualization, just press *knit* at the top in Rstudio. 
 
 ## Practice 
+
+Make sure to switch to the branch you created earlier. 
 
 Open **Practice.R**. Each group will be assigned two problems, and each person should code the solution for one. 
 
