@@ -38,13 +38,21 @@ ggplot(PracticeData, aes(x=CRP_mg_L, y = BMI)) +
 
 ## Group B 
 
+Use colors in these plots, but please use a pre-built color palettes. 
+
 ### Excercise 3
+
+Please present CD4 count differences between the difference cohorts and time points. 
+
+Hint: first look at this column and determine what variable type it is. 
 
 ```{r, warning=FALSE, message=FALSE}
 
 ```
 
 ### Excercise 4
+
+Illustrate differences in water source among men and women in the different cohorts. 
 
 ```{r, warning=FALSE, message=FALSE}
 

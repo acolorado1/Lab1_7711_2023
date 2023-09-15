@@ -52,14 +52,14 @@ summary_heatmap <- summary_table %>%
                       mutate(WaterSource = case_when(WaterSource == 'a. Tap' ~ 'Tap',
                                              WaterSource == 'b. Bore hole' ~ 'Bore\nHole',
                                              WaterSource == 'c. Well' ~ 'Well')) %>% 
-                    ggplot(aes(x = WaterSource, y = BMICat, fill = Count)) + 
-                                      geom_tile(show.legend = F) + 
-                                      geom_text(aes(label = Count)) + 
-                                      theme_bw() + 
-                                      scale_fill_gradient(low = "white", high = "#1b98e0") + 
-                                      xlab("Water Source") + 
-                                      ylab("BMI Categories") + 
-                                      theme(text = element_text(size = 16))
+                      ggplot(aes(x = WaterSource, y = BMICat, fill = Count)) + 
+                                        geom_tile(show.legend = F) + 
+                                        geom_text(aes(label = Count)) + 
+                                        theme_bw() + 
+                                        scale_fill_gradient(low = "white", high = "#1b98e0") + 
+                                        xlab("Water Source") + 
+                                        ylab("BMI Categories") + 
+                                        theme(text = element_text(size = 16))
 
 # This might be my solution 
 plot_grid(new_plot, summary_heatmap, 
@@ -88,7 +88,7 @@ new_plot <- ggplot(PracticeData, aes(x=CRP_mg_L, y = BMI, color = Main_Source_Wa
                 theme_bw() + 
                 theme(text = element_text(size = 12)) + 
                 xlab("CRP (mg/L)") +
-                labs(color = "Water Source")
+                labs(color = "Water Source")  
   
 plot_grid(OG, new_plot, 
           ncol = 2, 
@@ -98,16 +98,79 @@ plot_grid(OG, new_plot,
 
 ## Group B 
 
+Use colors in these plots, but please use a pre-built color palettes. 
+
+### Excercise 3
+
+Please view CD4 count differences between the difference cohorts and time points. 
+
+Hint: first present at this column and determine what variable type it is. 
+
 ### Excercise 3
 
 ```{r, warning=FALSE, message=FALSE}
+# get a palette 
+library(RColorBrewer)
+cohortColors <- palette(brewer.pal(n = 5, name = "PiYG"))
 
+# remove cohort C and make prettier variables 
+Cohorts_AB <- PracticeData %>% 
+  filter(Cohort_Short != "C") %>% 
+  mutate(Visit = case_when(Visit == 2 ~ "Week 0", 
+                           Visit == 3 ~ "Week 24"), 
+         Cohort_Short = case_when(Cohort_Short == "A" ~ "ART naive", 
+                                  Cohort_Short == "B" ~ "ART exp"))
+# make CD4 count numeric 
+Cohorts_AB$`CD4+_count` <- as.numeric(Cohorts_AB$`CD4+_count`)
+  
+# R really doesnt like characters in column names so for downstream purposes 
+# replace column name
+colnames(Cohorts_AB)[colnames(Cohorts_AB) == 'CD4+_count'] <- 'CD4_count'
+
+# perform statistical test 
+krusk_test <- Cohorts_AB %>% 
+  group_by(Visit) %>% 
+  kruskal_test(CD4_count~Cohort_Short) %>% 
+  mutate(group1 = "ART naive", # this is a hack 
+         group2 = "ART exp") %>% 
+  add_xy_position(x = "Cohort_Short")
+
+# plot 
+ggplot(Cohorts_AB, aes(x = Cohort_Short, y = CD4_count)) + 
+  geom_boxplot(aes(fill = Cohort_Short), show.legend = F) + 
+  scale_fill_manual(values = c(cohortColors[1], 
+                               cohortColors[5])) + 
+  theme_bw() + 
+  theme(text = element_text(size = 12)) + 
+  xlab("Cohort") + 
+  ylab("CD4+ Count") + 
+  facet_wrap(~Visit) + 
+  stat_pvalue_manual(krusk_test, label = "p")
 ```
 
 ### Excercise 4
 
-```{r, warning=FALSE, message=FALSE}
+Illustrate differences in water source among men and women in the different cohorts. 
 
+```{r, warning=FALSE, message=FALSE}
+# get color palette
+pal <- palette(brewer.pal(n = 2, name = "BrBG"))
+
+# make data tidy 
+sub <- PracticeData %>% 
+  mutate(Cohort_Short = case_when(Cohort_Short == "A" ~ "ART naive", 
+                           Cohort_Short == "B" ~ "ART exp", 
+                           Cohort_Short == "C" ~ "HC")) %>% 
+  group_by(Cohort_Short, Main_Source_Water) %>%
+  count(Gender)
+
+ggplot(sub, aes(x = Main_Source_Water, y = Gender, fill = n)) + 
+  geom_tile(show.legend = F) +
+  geom_text(aes(label = n)) + 
+  scale_fill_gradient(low = pal[1], high = pal[3]) + 
+  theme_bw() +
+  facet_wrap(~Cohort_Short) + 
+  xlab("Water Source") 
 ```
 
 ## Group C 
