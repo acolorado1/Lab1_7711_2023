@@ -1,3 +1,5 @@
+# Potential Solutions to Practice Excercises 
+
 Please run this first chunk so we all have a consistent database name and set of packages to start with. 
 
 ```{r, warning=FALSE, message=FALSE}
@@ -111,7 +113,7 @@ Hint: first present at this column and determine what variable type it is.
 ```{r, warning=FALSE, message=FALSE}
 # get a palette 
 library(RColorBrewer)
-cohortColors <- palette(brewer.pal(n = 5, name = "PiYG"))
+cohortColors <- RColorBrewer::brewer.pal(n = 5, name = "PiYG")
 
 # remove cohort C and make prettier variables 
 Cohorts_AB <- PracticeData %>% 
@@ -154,7 +156,7 @@ Illustrate differences in water source among men and women in the different coho
 
 ```{r, warning=FALSE, message=FALSE}
 # get color palette
-pal <- palette(brewer.pal(n = 2, name = "BrBG"))
+pal <- RColorBrewer::brewer.pal(n = 2, name = "BrBG")
 
 # make data tidy 
 sub <- PracticeData %>% 
@@ -175,15 +177,115 @@ ggplot(sub, aes(x = Main_Source_Water, y = Gender, fill = n)) +
 
 ## Group C 
 
+These two problems are extremely similar, for extra credit you can try to add color to provide information on the directionality of the trend between groups or on p-value. 
+
 ### Excercise 5
 
+Make all inter-cohort comparisons for all immune markers (not including CD4 counts), plot statistical significance
+
 ```{r, warning=FALSE, message=FALSE}
+immune_markers <- c("CD4_PD1_Percent", "CD4_CD103_Percent",
+                    "CD4_HLADRpos_CD38pos_Percent", "CRP_mg_L", "Cortisol_ug_dL")
+
+# get tidy and cleaned data 
+inter_tidy <- PracticeData %>% 
+  select(Cohort_Short, all_of(immune_markers)) %>% 
+  gather(-Cohort_Short, key = Immune_Cell, value = quantity) %>% 
+  mutate(Immune_Cell = case_when(Immune_Cell == "CD4_PD1_Percent" ~ "CD4+PD1+ (%)", 
+                                 Immune_Cell == "CD4_CD103_Percent" ~ "CD4+CD103+ (%)",
+                                 Immune_Cell == "CD4_HLADRpos_CD38pos_Percent" ~ "CD4+CD38+HLA-DR (%)", 
+                                 Immune_Cell == "CRP_mg_L" ~ "CRP (mg/L)", 
+                                 Immune_Cell == "Cortisol_ug_dL" ~ "Cortisol (ug/dL)"),
+         Cohort_Short = case_when(Cohort_Short == "A" ~ "ART naive", 
+                                  Cohort_Short == "B" ~ "ART exp", 
+                                  Cohort_Short == "C" ~ "HC"))
+
+# perform stats 
+dunns_data <- inter_tidy %>% 
+  group_by(Immune_Cell) %>% 
+  dunn_test(quantity~Cohort_Short) %>% 
+  adjust_pvalue(method = 'bonferroni') 
+
+# get average values for each group 
+inter_avg <- inter_tidy %>% 
+  group_by(Cohort_Short, Immune_Cell) %>% 
+  summarise(avg = mean(quantity)) %>% 
+  mutate(avg = case_when(is.na(avg) ~ 0, 
+                         !is.na(avg) ~ avg)) # this is just for the purpose of this exercise
+
+# merge data 
+dunns_data <- dunns_data %>% 
+  merge(inter_avg, by.x = c('group1', 'Immune_Cell'), 
+                   by.y = c('Cohort_Short', 'Immune_Cell')) %>% 
+  rename(group1avg = avg) %>% 
+  merge(inter_avg, by.x = c('group2', 'Immune_Cell'), 
+                   by.y = c('Cohort_Short', 'Immune_Cell')) %>% 
+  rename(group2avg = avg) %>% 
+  mutate(cohort_diff = group2avg - group1avg, 
+         comparison = paste0(group2, " - ", group1))
+
+# plot 
+dunns_data %>% 
+  mutate(cohort_diff = case_when(p.adj.signif == "ns" ~ NA, 
+                                 p.adj.signif != "ns" ~ cohort_diff)) %>% 
+  ggplot(aes(x = comparison, y = Immune_Cell, fill = cohort_diff)) +
+    geom_tile() + 
+    geom_text(aes(label = p.adj.signif)) + 
+    theme_bw() + 
+    theme(text = element_text(size = 12)) + 
+    scale_fill_gradient2(high = "red2", mid = "white", low = "deepskyblue3",na.value = "lightgrey", 
+                         midpoint = 0, limits = c(-40, 40)) + 
+    xlab(" ") + 
+    ylab("Immune Markers") + 
+    labs(fill = "Delta")
+  
 
 ```
 
 ### Excercise 6
 
-```{r, warning=FALSE, message=FALSE}
+Make all intra-cohort comparisons for all immune markers (not including CD4 counts), plot statistical significance.
 
+Note: for this I did not color by deltas I colored by p-value. 
+
+```{r, warning=FALSE, message=FALSE}
+immune_markers <- c("CD4_PD1_Percent", "CD4_CD103_Percent",
+                    "CD4_HLADRpos_CD38pos_Percent", "CRP_mg_L", "Cortisol_ug_dL")
+
+# make data tidy and clean 
+intra_tidy <- PracticeData %>% 
+  select(Cohort_Short, Visit, all_of(immune_markers)) %>% 
+  gather(-Cohort_Short, -Visit, key = Immune_Cell, value = quantity) %>% 
+  mutate(Immune_Cell = case_when(Immune_Cell == "CD4_PD1_Percent" ~ "CD4+PD1+ (%)", 
+                                 Immune_Cell == "CD4_CD103_Percent" ~ "CD4+CD103+ (%)",
+                                 Immune_Cell == "CD4_HLADRpos_CD38pos_Percent" ~ "CD4+CD38+HLA-DR (%)", 
+                                 Immune_Cell == "CRP_mg_L" ~ "CRP (mg/L)", 
+                                 Immune_Cell == "Cortisol_ug_dL" ~ "Cortisol (ug/dL)"),
+         Cohort_Short = case_when(Cohort_Short == "A" ~ "ART naive", 
+                                  Cohort_Short == "B" ~ "ART exp", 
+                                  Cohort_Short == "C" ~ "HC"), 
+         Visit = case_when(Visit == 2 ~ "Week 0", 
+                           Visit == 3 ~ "Week 24"))
+
+# perform stats 
+intra_mann <- intra_tidy %>% 
+  group_by(Immune_Cell, Cohort_Short) %>% 
+  wilcox_test(quantity ~ Visit) %>% 
+  adjust_pvalue(method = 'BH') %>% 
+  add_significance() %>% 
+  mutate(comparison = paste0(Cohort_Short, ": ", group1, "-", group2))
+  
+# plot 
+# to wrap long labels install new package
+library(stringr)
+
+ggplot(intra_mann, aes(x = comparison, y = Immune_Cell, fill = p.adj)) + 
+  geom_tile() + 
+  geom_text(aes(label = p.adj.signif)) + 
+  theme_bw() + 
+  theme(text = element_text(size = 12)) + 
+  xlab(" ") + 
+  ylab("Immune Markers") + 
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 12.5))
 ```
 

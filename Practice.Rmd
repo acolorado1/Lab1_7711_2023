@@ -60,7 +60,11 @@ Illustrate differences in water source among men and women in the different coho
 
 ## Group C 
 
+These two problems are extremely similar, for extra credit you can try to add color to provide information on the directionality of the trend between groups or on p-value. 
+
 ### Excercise 5
+
+Make all inter-cohort comparisons for all immune markers (not including CD4 counts), plot statistical significance
 
 ```{r, warning=FALSE, message=FALSE}
 
@@ -68,7 +72,8 @@ Illustrate differences in water source among men and women in the different coho
 
 ### Excercise 6
 
+Make all intra-cohort comparisons for all immune markers (not including CD4 counts), plot statistical significance.
+
 ```{r, warning=FALSE, message=FALSE}
 
 ```
-
